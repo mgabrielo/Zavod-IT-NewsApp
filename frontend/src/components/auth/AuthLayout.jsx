@@ -61,9 +61,9 @@ const AuthLayout = ({
           }}
         >
           <Typography variant="h3" sx={{ textAlign: "center" }}>
-            Welcome to Postgres Auth
+            Welcome to News App
           </Typography>
-          <Typography variant="body">Share the Auth Experience</Typography>
+          <Typography variant="body">Share the News Experience</Typography>
         </Box>
       </Grid>
       <Grid item xs={12}>
