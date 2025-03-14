@@ -132,6 +132,14 @@ const HomePage = () => {
                 <Typography variant="h6" gutterBottom>
                   {article.title}
                 </Typography>
+
+                <Typography
+                  variant="h3"
+                  sx={{ mt: 3, fontSize: 16 }}
+                  gutterBottom
+                >
+                  {article.text}
+                </Typography>
               </CardContent>
               <CardActions sx={{ justifyContent: "space-between", p: 2 }}>
                 <Button
