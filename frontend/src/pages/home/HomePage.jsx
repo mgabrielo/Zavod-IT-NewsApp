@@ -45,7 +45,7 @@ const HomePage = () => {
     }
   };
 
-  const handleLikeDislike = async (newsId, index, type) => {
+  const handleLikeDislike = async (newsId, type) => {
     try {
       const response = await axios.patch(
         `${BASE_URL}/news/reaction/${newsId}/${type}`,
@@ -130,7 +130,9 @@ const HomePage = () => {
                   sx={{ mt: 3, fontSize: 16 }}
                   gutterBottom
                 >
-                  {article.text}
+                  {article.text.length > 50
+                    ? article.text.substring(0, 50) + "..."
+                    : article.text}
                 </Typography>
 
                 {article.tags &&
@@ -171,9 +173,7 @@ const HomePage = () => {
                     variant="outlined"
                     color="success"
                     sx={{ color: "#000", fontWeight: "bold", fontSize: 15 }}
-                    onClick={() =>
-                      handleLikeDislike(article?.news_id, index, "like")
-                    }
+                    onClick={() => handleLikeDislike(article?.news_id, "like")}
                   >
                     👍 {likeId === article?.news_id && likeCount}
                   </Button>
@@ -181,7 +181,7 @@ const HomePage = () => {
                     variant="outlined"
                     color="secondary"
                     onClick={() =>
-                      handleLikeDislike(article?.news_id, index, "dislike")
+                      handleLikeDislike(article?.news_id, "dislike")
                     }
                     sx={{
                       ml: 1,

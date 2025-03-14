@@ -118,10 +118,26 @@ const NewsByTag = () => {
                     {article.title}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {article.text.length > 100
-                      ? article.text.substring(0, 100) + "..."
+                    {article.text.length > 50
+                      ? article.text.substring(0, 50) + "..."
                       : article.text}
                   </Typography>
+                  {article.tags &&
+                    article.tags?.length > 0 &&
+                    article.tags?.map((tag) => (
+                      <Typography
+                        variant="h3"
+                        sx={{
+                          mt: 3,
+                          fontSize: 16,
+                          color: "#808080",
+                          cursor: "pointer",
+                        }}
+                        gutterBottom
+                      >
+                        #{tag}
+                      </Typography>
+                    ))}
                 </CardContent>
               </Card>
             </Grid>
