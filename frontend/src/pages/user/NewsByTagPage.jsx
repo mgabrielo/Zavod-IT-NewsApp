@@ -134,6 +134,7 @@ const NewsByTag = () => {
                           cursor: "pointer",
                         }}
                         gutterBottom
+                        onClick={() => setSelectedTag(`${tag}`)}
                       >
                         #{tag}
                       </Typography>
