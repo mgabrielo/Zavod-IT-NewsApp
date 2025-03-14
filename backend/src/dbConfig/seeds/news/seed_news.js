@@ -30,18 +30,24 @@ export const seed = async function (knex) {
         text: `Tech Text ${i + 1}`,
         picture: images[imageIndex],
         tags: ["Tech"],
+        likes: 0,
+        dislikes: 0
       }
       const newPoliticsData = {
         title: `Politics House ${i + 1}`,
         text: `Politics Text ${i + 1}`,
         picture: images[imageIndex],
         tags: ["Politics"],
+        likes: 0,
+        dislikes: 0
       }
       const newFinanceData = {
         title: `Finance House ${i + 1}`,
         text: `Finance Text ${i + 1}`,
         picture: images[imageIndex],
         tags: ["Finance"],
+        likes: 0,
+        dislikes: 0
       }
 
       newsData.push(newTechData, newPoliticsData, newFinanceData)
@@ -53,6 +59,8 @@ export const seed = async function (knex) {
           title: news.title,
           text: news.text,
           picture: news.picture,
+          likes: 0,
+          dislikes: 0
         })
         .returning("id");
 

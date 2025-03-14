@@ -3,55 +3,37 @@ import { newsDBPool, authDBPool, userInteractDBPool } from "../dbConfig/get-db.j
 import { addNewsQuery, addTagQuery, countReactionsQuery, deleteNewsQuery, deleteNewsTagQuery, deleteReactionsQuery, getAllNewsQuery, getTagIdsQuery, insertReactionsQuery, setNewTagsQuery, updateReactionsQuery } from "../queries/newsQueries.js";
 
 
-const newsCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
+const newsCache = new NodeCache({
+    stdTTL: 30,
+    checkperiod: 30
+});
 
 export const getAllNewsDetails = async (req, res) => {
 
-    const { page = 1 } = req.query;
-
+    // const cachedNews = newsCache.get("allNews");
     try {
-        // Check cache for news data
-        const cachedNews = newsCache.get("allNews");
-        if (cachedNews) {
-            // Paginate from the cached data
-            const pageSize = 6;
-            const startIdx = (page - 1) * pageSize;
-            const paginatedNews = cachedNews.slice(startIdx, startIdx + pageSize);
 
-            return res.status(200).json({ news: paginatedNews });
-        }
-
-        // Fetch news from the database if not in cache
-        const exsitingNews = await newsDBPool.query(getAllNewsQuery);
-
+        const exsitingNews = await newsDBPool.query(getAllNewsQuery)
         if (exsitingNews?.rows?.length === 0) {
-            return res.status(404).json({ msg: 'News Content Not Found' });
+            res.status(404).json({ msg: 'News Content Not Found' })
+        } else {
+            const data = exsitingNews?.rows
+            const result = await newsDBPool.query(`
+                    SELECT COUNT(DISTINCT tag_id) AS total_tags FROM news_tags;
+                `);
+            newsCache.set("allNews", data);
+
+            const allCachedNews = newsCache.get("allNews");
+            // console.log(data?.length)
+            res.status(200).json({
+                news: allCachedNews,
+                totalNews: exsitingNews?.rows?.length,
+                totalTags: result.rows[0].total_tags
+            })
         }
-
-        const data = exsitingNews?.rows;
-
-        // Cache the fetched news data for future requests
-        newsCache.set("allNews", data);
-
-        // Paginate the news data
-        const pageSize = 3;
-        const startIdx = (page - 1) * pageSize;
-        const paginatedNews = data.slice(startIdx, startIdx + pageSize);
-
-        const result = await newsDBPool.query(`
-        SELECT COUNT(DISTINCT tag_id) AS total_tags FROM news_tags;
-    `);
-
-        res.status(200).json({
-            news: data,
-            totalNews: exsitingNews?.rows?.length,
-            totalTags: result.rows[0].total_tags
-        });
     } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ message: error?.message || 'Server Error' });
+        res.status(500).json({ message: error?.message || 'Server Error' })
     }
-
 }
 
 
@@ -131,64 +113,84 @@ export const updateNewsLikes = async (req, res) => {
     try {
         await client.query("BEGIN");
 
-        // Step 1: Check if the user exists
-        const userExists = await authDBPool.query("SELECT * FROM users WHERE id = $1", [userId]);
+        const userExists = await authDBPool.query("SELECT id FROM users WHERE id = $1", [userId]);
         if (userExists.rows.length === 0) {
             return res.status(400).json({ message: "User not found" });
         }
 
-        // Step 2: Check if the news article exists
-        const newsExists = await newsDBPool.query("SELECT * FROM news WHERE id = $1", [newsId]);
+        const newsExists = await newsDBPool.query("SELECT id FROM news WHERE id = $1", [newsId]);
         if (newsExists.rows.length === 0) {
             return res.status(400).json({ message: "News article not found" });
         }
 
-        // Step 3: Check if the user has already reacted
         const existingReaction = await userInteractDBPool.query(
-            "SELECT * FROM user_interactions WHERE user_id = $1 AND news_id = $2",
-            [userExists.rows[0].id, newsExists.rows[0].id]
+            "SELECT action FROM user_interactions WHERE user_id = $1 AND news_id = $2",
+            [userId, newsId]
         );
 
-        // Step 4: Handle existing reaction or insert new one
-        if (existingReaction.rows.length > 0 && existingReaction.rows[0] !== undefined) {
+        let likeChange = 0;
+        let dislikeChange = 0;
+
+        if (existingReaction.rows.length > 0) {
             const currentAction = existingReaction.rows[0].action;
-            // Case 1: Delete the existing reaction if the user presses the same button again
+
             if (currentAction === type) {
+                // If user presses the same button again → Remove reaction
                 await userInteractDBPool.query(
-                    deleteReactionsQuery,
+                    "DELETE FROM user_interactions WHERE user_id = $1 AND news_id = $2",
                     [userId, newsId]
                 );
+                if (currentAction === "like") likeChange = -1;
+                if (currentAction === "dislike") dislikeChange = -1;
             } else {
-                // Case 2: Update the reaction if user toggles between like/dislike
+                // If user toggles between like and dislike → Update reaction
                 await userInteractDBPool.query(
-                    updateReactionsQuery,
+                    "UPDATE user_interactions SET action = $1 WHERE user_id = $2 AND news_id = $3",
                     [type, userId, newsId]
                 );
+
+                if (type === "like") {
+                    likeChange = 1;
+                    dislikeChange = -1;
+                } else {
+                    likeChange = -1;
+                    dislikeChange = 1;
+                }
             }
         } else {
-            // Case 3: Insert a new reaction if no previous reaction exists
             await userInteractDBPool.query(
-                insertReactionsQuery,
-                [userExists.rows[0].id, newsExists.rows[0].id, type]
+                "INSERT INTO user_interactions (user_id, news_id, action) VALUES ($1, $2, $3)",
+                [userId, newsId, type]
             );
+            if (type === "like") likeChange = 1;
+            if (type === "dislike") dislikeChange = 1;
         }
 
-        // Step 5: Get the updated like and dislike counts
-        const countResult = await userInteractDBPool.query(countReactionsQuery,
+        await newsDBPool.query(
+            `UPDATE news 
+             SET likes = GREATEST(likes + $1, 0), 
+                 dislikes = GREATEST(dislikes + $2, 0) 
+             WHERE id = $3`,
+            [likeChange, dislikeChange, newsId]
+        );
+
+        const countResult = await newsDBPool.query(
+            "SELECT likes, dislikes FROM news WHERE id = $1",
             [newsId]
         );
 
-        const result = await userInteractDBPool.query(`
-        SELECT 
-            COALESCE(SUM(CASE WHEN action = 'like' THEN 1 ELSE 0 END), 0) AS total_likes,
-            COALESCE(SUM(CASE WHEN action = 'dislike' THEN 1 ELSE 0 END), 0) AS total_dislikes
-        FROM user_interactions;
-    `);
+        const result = await newsDBPool.query(`
+                SELECT 
+                    SUM(likes) AS total_likes, 
+                    SUM(dislikes) AS total_dislikes 
+                FROM news;
+            `);
 
         // Commit the transaction
         await client.query("COMMIT");
 
-        // Send the updated like and dislike counts in response
+        console.log({ reactCount: countResult.rows[0], likesaall: result.rows[0].total_likes, });
+
         res.status(200).json({
             message: "Reaction updated successfully",
             data: countResult.rows[0],

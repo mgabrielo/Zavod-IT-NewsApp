@@ -9,14 +9,26 @@ import { Card, CardActions, CardContent, CardMedia } from "@mui/material";
 import axios from "axios";
 import DialogBox from "../../components/dialog/Dialog";
 import { getUser } from "../../hooks/getUser";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setDislikeCounts,
+  setDislikeId,
+  setLikeCount,
+  setLikeId,
+} from "../../redux/news/newsSlice";
+import Spinner from "../../components/spinner/Spinner";
 
 const HomePage = () => {
   const { news, fetchAllNews, deleteNews, newsLoading } = newsAction();
+  const { likeCount, likeId, dislikeCounts, dislikeId } = useSelector(
+    (state) => state.news
+  );
   const { isAuthenticated } = getUser();
   const [page, setPage] = useState(1);
   const [newsData, setNewsData] = useState([]);
   const [handleOpen, setHandleOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const dispatch = useDispatch();
 
   const handleDeleteNews = (e, closed) => {
     e.preventDefault();
@@ -31,22 +43,29 @@ const HomePage = () => {
     }
   };
 
-  const handleLikeDislike = async (newsId, type) => {
+  const handleLikeDislike = async (newsId, index, type) => {
     try {
       const response = await axios.patch(
         `${BASE_URL}/news/reaction/${newsId}/${type}`,
         {},
         { withCredentials: true }
       );
-      setNewsData(
-        news.map((item) => {
-          return {
-            ...item,
-            likes: item.news_id === newsId ? response.data.data.likes : 0,
-            dislikes: item.news_id === newsId ? response.data.data.dislikes : 0,
-          };
-        })
-      );
+      console.log(response?.data?.data?.likes);
+      if (response?.data?.data?.likes === 1) {
+        dispatch(setLikeCount(1));
+        dispatch(setLikeId(newsId));
+      } else {
+        dispatch(setLikeCount(0));
+        dispatch(setLikeId(newsId));
+      }
+
+      if (response?.data?.data?.dislikes === 1) {
+        dispatch(setDislikeCounts(1));
+      } else {
+        dispatch(setDislikeCounts(0));
+      }
+
+      dispatch(setDislikeId(newsId));
     } catch (error) {
       console.error(`Error updating ${type}:`, error);
     }
@@ -66,10 +85,12 @@ const HomePage = () => {
   }, [news]);
 
   useEffect(() => {
-    fetchAllNews(page);
-  }, [page]);
+    fetchAllNews();
+  }, []);
 
-  // console.log({ news });
+  if (newsLoading) {
+    return <Spinner />;
+  }
 
   return (
     <Box
@@ -129,15 +150,17 @@ const HomePage = () => {
                     variant="outlined"
                     color="success"
                     sx={{ color: "#000", fontWeight: "bold", fontSize: 15 }}
-                    onClick={() => handleLikeDislike(article?.news_id, "like")}
+                    onClick={() =>
+                      handleLikeDislike(article?.news_id, index, "like")
+                    }
                   >
-                    👍 {article.likes}
+                    👍 {likeId === article?.news_id && likeCount}
                   </Button>
                   <Button
                     variant="outlined"
                     color="secondary"
                     onClick={() =>
-                      handleLikeDislike(article?.news_id, "dislike")
+                      handleLikeDislike(article?.news_id, index, "dislike")
                     }
                     sx={{
                       ml: 1,
@@ -146,7 +169,7 @@ const HomePage = () => {
                       fontSize: 15,
                     }}
                   >
-                    👎 {article.dislikes}
+                    👎 {dislikeId === article?.news_id && dislikeCounts}
                   </Button>
                 </Box>
               </CardActions>

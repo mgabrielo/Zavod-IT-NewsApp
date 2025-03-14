@@ -14,9 +14,5 @@ export default function PrivateRoute() {
     }
   }, []);
 
-  if (loading) {
-    return <Spinner />;
-  }
-
   return currentUser !== null ? <Outlet /> : <Navigate to={"/login"} />;
 }

@@ -9,8 +9,11 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { newsAction } from "../../hooks/newsAction";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const CreateNewsPage = () => {
+  const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
   const { addNews } = newsAction();
@@ -53,21 +56,32 @@ const CreateNewsPage = () => {
 
   const onSubmit = async (data) => {
     const formData = new FormData();
-    formData.append("title", data.title);
-    formData.append("text", data.text);
-    formData.append("tags", JSON.stringify(data.tags)); // Convert array to JSON string
-    if (selectedImage) {
-      formData.append("picture", selectedImage); // Append the image file
-    }
 
-    try {
-      const { newsId } = addNews(formData);
-      reset(); // Clear form after submission
-      setSelectedImage(null);
-      setPreviewImage("");
-    } catch (error) {
-      console.error("Error adding news:", error);
-      alert("Failed to add news!");
+    Object.keys(data).map((key) => {
+      if (!data[key].length || !data[key]) {
+        toast.error(`${key} is missing`);
+      }
+      return;
+    });
+    // Convert array to JSON string
+    if (selectedImage && data.title && data.text && data.tags) {
+      formData.append("title", data.title);
+      formData.append("text", data.text);
+      formData.append("tags", JSON.stringify(data.tags));
+      formData.append("picture", selectedImage);
+      // Append the image file
+      try {
+        addNews(formData);
+        reset(); // Clear form after submission
+        setSelectedImage(null);
+        setPreviewImage("");
+        navigate("/news");
+      } catch (error) {
+        console.error("Error adding news:", error);
+        alert("Failed to add news!");
+      }
+    } else {
+      toast.error(`Image Upload is Missing....Form Incomplete`);
     }
   };
 

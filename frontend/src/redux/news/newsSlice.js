@@ -5,7 +5,11 @@ const initialState = {
     newsLoading: false,
     newsError: null,
     newsTotal: 0,
-    totalTags: 0
+    totalTags: 0,
+    likeCount: 0,
+    likeId: null,
+    dislikeCounts: 0,
+    dislikeId: null
 }
 
 const newsSlice = createSlice({
@@ -34,6 +38,26 @@ const newsSlice = createSlice({
         },
         setNewsTotalTags: (state, action) => {
             state.totalTags = action.payload
+        },
+        setLikeCount: (state, action) => {
+            if (action.payload) {
+                state.likeCount = action.payload
+            } else {
+                state.likeCount = 0
+            }
+        },
+        setLikeId: (state, action) => {
+            if (action.payload) {
+                state.likeId = action.payload
+            } else {
+                state.likeId = 0
+            }
+        },
+        setDislikeId: (state, action) => {
+            state.dislikeId = action.payload
+        },
+        setDislikeCounts: (state, action) => {
+            state.dislikeCounts = action.payload
         }
     }
 })
@@ -43,7 +67,11 @@ export const {
     getAllNewsSuccess,
     getAllNewsFailure,
     setNewsTotal,
-    setNewsTotalTags
+    setNewsTotalTags,
+    setLikeCount,
+    setDislikeCounts,
+    setLikeId,
+    setDislikeId
 } = newsSlice.actions
 
 export default newsSlice.reducer

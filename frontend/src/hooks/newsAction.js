@@ -7,10 +7,10 @@ import { getAllNewsFailure, getAllNewsStart, getAllNewsSuccess, setNewsTotal, se
 export const newsAction = () => {
     const { news, newsLoading, totalTags } = useSelector((state) => state.news);
     const dispatch = useDispatch()
-    const fetchAllNews = async (pageNumber) => {
+    const fetchAllNews = async () => {
         dispatch(getAllNewsStart())
         try {
-            const res = await axios.get(`${BASE_URL}/news/all`, { params: { page: pageNumber } });
+            const res = await axios.get(`${BASE_URL}/news/all`);
             if (res.data?.news) {
                 dispatch(getAllNewsSuccess(res.data.news))
                 // console.log(res.data.news)

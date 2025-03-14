@@ -8,6 +8,8 @@ export const up = async function (knex) {
         table.string("title", 255).notNullable();
         table.text("text").notNullable();
         table.string("picture", 255);
+        table.integer("likes").defaultTo(0);
+        table.integer("dislikes").defaultTo(0);
         table.timestamp("created_at").defaultTo(knex.fn.now());
     });
 

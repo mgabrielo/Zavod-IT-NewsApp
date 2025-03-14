@@ -71,7 +71,7 @@ export const loginUser = async (req, res) => {
             if (validPassword) {
                 const token = generateJWT(exsitingUser?.rows[0].id)
                 const { id, password, ...responseUser } = exsitingUser?.rows[0]
-                const maxTokenAge = 60 * 60 * 1000;
+                const maxTokenAge = 3 * 60 * 60 * 1000;
                 res.status(200).cookie('auth_token', token, {
                     httpOnly: true,
                     maxAge: maxTokenAge,

@@ -5,22 +5,59 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { newsAction } from "../../hooks/newsAction";
 import { CardMedia, FormControl, Grid, MenuItem, Select } from "@mui/material";
+import axios from "axios";
+import { BASE_URL } from "../../utils/utils";
+import Spinner from "../../components/spinner/Spinner";
 
 const NewsByTag = () => {
   const [selectedTag, setSelectedTag] = useState("");
-  const { fetchAllNews, news } = newsAction();
+  const { news } = newsAction();
+  const [newsData, setNewsData] = useState(news || []);
+  const [filteredNews, setFilteredNews] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const uniqueTags = [...new Set(news.flatMap((newsItem) => newsItem.tags))]; // Extract tags
+  // Extract unique tags from all news items
+  const uniqueTags = [
+    ...new Set(newsData.flatMap((newsItem) => newsItem.tags || [])),
+  ];
 
-  const filteredNews = selectedTag
-    ? news.filter((newsItem) => newsItem.tags.includes(selectedTag))
-    : news;
-
+  // Fetch news on mount
   useEffect(() => {
-    if (!news) {
-      fetchAllNews();
+    const fetchAnyNews = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${BASE_URL}/news/all`);
+        if (res.data?.news) {
+          setNewsData(res.data.news);
+          setFilteredNews(res.data.news);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        setLoading(false);
+      }
+    };
+    fetchAnyNews();
+  }, []);
+
+  // Filter news based on selected tag
+  useEffect(() => {
+    if (selectedTag) {
+      setLoading(true);
+      setFilteredNews(
+        newsData.filter((newsItem) => newsItem.tags.includes(selectedTag))
+      );
+      setLoading(false);
+    } else {
+      setLoading(true);
+      setFilteredNews(newsData);
+      setLoading(false);
     }
-  }, [news]);
+  }, [selectedTag, newsData]);
+
+  if (loading) {
+    return <Spinner />;
+  }
 
   return (
     <Box
@@ -79,6 +116,8 @@ const NewsByTag = () => {
               </Card>
             </Grid>
           ))
+        ) : news.length > 0 || loading ? (
+          <Spinner />
         ) : (
           <Typography>No news found for this tag</Typography>
         )}
