@@ -9,7 +9,8 @@ const initialState = {
     likeCount: 0,
     likeId: null,
     dislikeCounts: 0,
-    dislikeId: null
+    dislikeId: null,
+    tagParams: null
 }
 
 const newsSlice = createSlice({
@@ -58,6 +59,12 @@ const newsSlice = createSlice({
         },
         setDislikeCounts: (state, action) => {
             state.dislikeCounts = action.payload
+        },
+        setTagParams: (state, action) => {
+            state.tagParams = action.payload
+        },
+        removeTagParams: (state) => {
+            state.tagParams = null
         }
     }
 })
@@ -71,7 +78,9 @@ export const {
     setLikeCount,
     setDislikeCounts,
     setLikeId,
-    setDislikeId
+    setDislikeId,
+    setTagParams,
+    removeTagParams
 } = newsSlice.actions
 
 export default newsSlice.reducer

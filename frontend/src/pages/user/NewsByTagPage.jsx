@@ -8,6 +8,8 @@ import { CardMedia, FormControl, Grid, MenuItem, Select } from "@mui/material";
 import axios from "axios";
 import { BASE_URL } from "../../utils/utils";
 import Spinner from "../../components/spinner/Spinner";
+import { useDispatch, useSelector } from "react-redux";
+import { removeTagParams } from "../../redux/news/newsSlice";
 
 const NewsByTag = () => {
   const [selectedTag, setSelectedTag] = useState("");
@@ -15,7 +17,8 @@ const NewsByTag = () => {
   const [newsData, setNewsData] = useState(news || []);
   const [filteredNews, setFilteredNews] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const { tagParams } = useSelector((state) => state.news);
+  const dispatch = useDispatch();
   // Extract unique tags from all news items
   const uniqueTags = [
     ...new Set(newsData.flatMap((newsItem) => newsItem.tags || [])),
@@ -54,6 +57,13 @@ const NewsByTag = () => {
       setLoading(false);
     }
   }, [selectedTag, newsData]);
+
+  useEffect(() => {
+    if (tagParams) {
+      setSelectedTag(tagParams);
+      dispatch(removeTagParams());
+    }
+  }, [tagParams]);
 
   if (loading) {
     return <Spinner />;

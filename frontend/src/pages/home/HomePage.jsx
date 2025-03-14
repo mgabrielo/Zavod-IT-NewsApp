@@ -15,16 +15,18 @@ import {
   setDislikeId,
   setLikeCount,
   setLikeId,
+  setTagParams,
 } from "../../redux/news/newsSlice";
 import Spinner from "../../components/spinner/Spinner";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const { news, fetchAllNews, deleteNews, newsLoading } = newsAction();
   const { likeCount, likeId, dislikeCounts, dislikeId } = useSelector(
     (state) => state.news
   );
   const { isAuthenticated } = getUser();
-  const [page, setPage] = useState(1);
   const [newsData, setNewsData] = useState([]);
   const [handleOpen, setHandleOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -53,11 +55,11 @@ const HomePage = () => {
       console.log(response?.data?.data?.likes);
       if (response?.data?.data?.likes === 1) {
         dispatch(setLikeCount(1));
-        dispatch(setLikeId(newsId));
       } else {
         dispatch(setLikeCount(0));
-        dispatch(setLikeId(newsId));
       }
+
+      dispatch(setLikeId(newsId));
 
       if (response?.data?.data?.dislikes === 1) {
         dispatch(setDislikeCounts(1));
@@ -68,15 +70,6 @@ const HomePage = () => {
       dispatch(setDislikeId(newsId));
     } catch (error) {
       console.error(`Error updating ${type}:`, error);
-    }
-  };
-
-  const handleScroll = (event) => {
-    const bottom =
-      event.target.scrollHeight ===
-      event.target.scrollTop + event.target.clientHeight;
-    if (bottom && !newsLoading) {
-      setPage((prev) => prev + 1); // Load next page when the user reaches the bottom
     }
   };
 
@@ -101,7 +94,6 @@ const HomePage = () => {
         mt: 12,
         flexDirection: "column",
       }}
-      onScroll={handleScroll}
     >
       <Typography variant="h3" align="center" gutterBottom>
         News Page
@@ -140,6 +132,27 @@ const HomePage = () => {
                 >
                   {article.text}
                 </Typography>
+
+                {article.tags &&
+                  article.tags?.length > 0 &&
+                  article.tags?.map((tag) => (
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        mt: 3,
+                        fontSize: 16,
+                        color: "#808080",
+                        cursor: "pointer",
+                      }}
+                      gutterBottom
+                      onClick={() => {
+                        dispatch(setTagParams(`${tag}`));
+                        navigate("/news-by-tag");
+                      }}
+                    >
+                      #{tag}
+                    </Typography>
+                  ))}
               </CardContent>
               <CardActions sx={{ justifyContent: "space-between", p: 2 }}>
                 <Button
