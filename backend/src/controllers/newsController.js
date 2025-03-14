@@ -189,8 +189,6 @@ export const updateNewsLikes = async (req, res) => {
         // Commit the transaction
         await client.query("COMMIT");
 
-        console.log({ reactCount: countResult.rows[0], likesaall: result.rows[0].total_likes, });
-
         res.status(200).json({
             message: "Reaction updated successfully",
             data: countResult.rows[0],

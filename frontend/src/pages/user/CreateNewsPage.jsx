@@ -64,7 +64,7 @@ const CreateNewsPage = () => {
       return;
     });
     // Convert array to JSON string
-    if (selectedImage && data.title && data.text && data.tags) {
+    if (selectedImage && data.title && data.text && data.tags.length > 0) {
       formData.append("title", data.title);
       formData.append("text", data.text);
       formData.append("tags", JSON.stringify(data.tags));
@@ -81,7 +81,7 @@ const CreateNewsPage = () => {
         alert("Failed to add news!");
       }
     } else {
-      toast.error(`Image Upload is Missing....Form Incomplete`);
+      toast.error(`Form Incomplete`);
     }
   };
 
