@@ -6,17 +6,19 @@ import {
   Button,
   Typography,
   Autocomplete,
+  Chip,
 } from "@mui/material";
-import axios from "axios";
 import { newsAction } from "../../hooks/newsAction";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 const CreateNewsPage = () => {
   const navigate = useNavigate();
+
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
-  const { addNews } = newsAction();
+  const [tagInput, setTagInput] = useState("");
+  const { addNews, fetchAllNews, news } = newsAction();
   const { handleSubmit, control, reset, setValue, watch } = useForm({
     defaultValues: {
       title: "",
@@ -24,64 +26,59 @@ const CreateNewsPage = () => {
       tags: [],
     },
   });
-  // Example Tags (Replace with API call if needed)
-  const availableTags = [
-    "Politics",
-    "Business",
-    "Technology",
-    "Sports",
-    "Health",
-  ];
 
-  // Handle Image Selection
+  const availableTags = [
+    ...new Set(news.flatMap((newsItem) => newsItem.tags || [])),
+  ];
+  const selectedTags = watch("tags") || [];
+
+  // Image Upload Handler
   const handleImageChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      // Validate File Type
-      if (!file.type.startsWith("image/")) {
-        alert("Please upload a valid image file.");
-        return;
-      }
-      // Validate File Size (Limit: 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        alert("File size must be less than 2MB.");
-        return;
-      }
-      setSelectedImage(file);
-      setPreviewImage(URL.createObjectURL(file));
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file.");
+      return;
     }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size must be less than 2MB.");
+      return;
+    }
+
+    setSelectedImage(file);
+    setPreviewImage(URL.createObjectURL(file));
   };
 
-  const selectedTags = watch("tags");
-
+  // Form Submission Handler
   const onSubmit = async (data) => {
     const formData = new FormData();
-
-    Object.keys(data).map((key) => {
-      if (!data[key].length || !data[key]) {
-        toast.error(`${key} is missing`);
-      }
+    const { title, text, tags } = data;
+    const tagInputArray = tagInput.split(",").map((item) => item.trim());
+    // tags.push(tagInput);
+    const allTags = [...tags, ...tagInputArray];
+    console.log({ allTags });
+    if (!title || !text || !selectedImage || allTags.length === 0) {
+      toast.error("Please fill all fields and add at least one tag.");
       return;
-    });
-    // Convert array to JSON string
-    if (selectedImage && data.title && data.text && data.tags.length > 0) {
-      formData.append("title", data.title);
-      formData.append("text", data.text);
-      formData.append("tags", JSON.stringify(data.tags));
-      formData.append("picture", selectedImage);
-      // Append the image file
-      try {
-        addNews(formData);
-        reset(); // Clear form after submission
-        setSelectedImage(null);
-        setPreviewImage("");
-        navigate("/news");
-      } catch (error) {
-        console.error("Error adding news:", error);
-        alert("Failed to add news!");
-      }
-    } else {
-      toast.error(`Form Incomplete`);
+    }
+
+    formData.append("title", title);
+    formData.append("text", text);
+    formData.append("tags", JSON.stringify(allTags));
+    formData.append("picture", selectedImage);
+
+    try {
+      await addNews(formData);
+      await fetchAllNews();
+      reset();
+      setSelectedImage(null);
+      setPreviewImage("");
+      navigate("/news");
+      toast.success("News added successfully!");
+    } catch (error) {
+      console.error("Error adding news:", error);
+      toast.error("Failed to add news!");
     }
   };
 
@@ -93,7 +90,7 @@ const CreateNewsPage = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        bgcolor: "#f5f5f5", // Light gray background for contrast
+        bgcolor: "#f5f5f5",
         p: 2,
       }}
     >
@@ -106,14 +103,13 @@ const CreateNewsPage = () => {
           borderRadius: 2,
           boxShadow: 3,
           bgcolor: "white",
-          flexDirection: "column",
         }}
       >
         <Typography variant="h5" sx={{ mb: 2, textAlign: "center" }}>
           Add News Content
         </Typography>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
           {/* Title */}
           <Controller
             name="title"
@@ -183,13 +179,45 @@ const CreateNewsPage = () => {
             render={({ field }) => (
               <Autocomplete
                 multiple
-                value={selectedTags}
+                freeSolo
                 options={availableTags}
-                onChange={(_, newValue) => {
-                  setValue("tags", newValue, { shouldValidate: true }); // Ensures tags update correctly
-                }}
+                value={selectedTags}
+                onChange={(_, newValue) =>
+                  setValue("tags", newValue, { shouldValidate: true })
+                }
+                filterSelectedOptions
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      variant="outlined"
+                      label={option}
+                      {...getTagProps({ index })}
+                      key={index}
+                    />
+                  ))
+                }
                 renderInput={(params) => (
-                  <TextField {...params} label="Tags" margin="normal" />
+                  <TextField
+                    {...params}
+                    label="Tags"
+                    margin="normal"
+                    value={tagInput}
+                    onChange={(event) => setTagInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && tagInput.trim() !== "") {
+                        event.preventDefault();
+                        const newTag = tagInput.trim();
+
+                        if (!selectedTags.includes(newTag)) {
+                          setValue("tags", [...selectedTags, newTag], {
+                            shouldValidate: true,
+                          });
+                        }
+
+                        setTagInput(""); // Clear input
+                      }
+                    }}
+                  />
                 )}
               />
             )}

@@ -6,12 +6,10 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { useSelector } from "react-redux";
 import { newsAction } from "../../hooks/newsAction";
-import axios from "axios";
-import { BASE_URL } from "../../utils/utils";
 
 const StatisticsPage = () => {
   const { newsTotal } = useSelector((state) => state.news);
-  const { fetchAllNews, totalTags } = newsAction();
+  const { fetchAllNews, totalTags, totalLikes, totalDisLikes } = newsAction();
   const { totalUsers } = getUser();
   const [totalReactions, setTotalReactions] = useState({
     totalLikes: 0,
@@ -24,17 +22,10 @@ const StatisticsPage = () => {
 
   useEffect(() => {
     const fetchReactionCount = async () => {
-      let newsId = "1";
-      let type = "like";
-      const response = await axios.patch(
-        `${BASE_URL}/news/reaction/${newsId}/${type}`,
-        {},
-        { withCredentials: true }
-      );
       setTotalReactions((prev) => ({
         ...prev,
-        totalLikes: response.data.totalLikes,
-        totalDislikes: response.data.totalDislikes,
+        totalLikes: totalLikes,
+        totalDislikes: totalDisLikes,
       }));
     };
     fetchReactionCount();
@@ -60,7 +51,7 @@ const StatisticsPage = () => {
       >
         <CardContent sx={{ gap: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography fontSize={18}>Total Number of New Post:</Typography>
+            <Typography fontSize={18}>Total Number of News Post:</Typography>
             <Typography>{newsTotal}</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

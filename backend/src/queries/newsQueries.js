@@ -1,6 +1,6 @@
-export const getAllNewsQuery = `SELECT news.id AS news_id,news.title,news.text,news.picture,news.created_at,
+export const getAllNewsQuery = `SELECT news.id AS news_id,news.title,news.text,news.picture,news.created_at,likes,dislikes,
 array_agg(tags.name) AS tags FROM news JOIN news_tags ON news.id = news_tags.news_id
-JOIN tags ON news_tags.tag_id = tags.id GROUP BY news.id ORDER BY news.id ASC;`
+JOIN tags ON news_tags.tag_id = tags.id GROUP BY news.id ORDER BY news.id ASC`
 
 export const addNewsQuery = `INSERT INTO news (title, text, picture) VALUES ($1, $2, $3) RETURNING id;`
 

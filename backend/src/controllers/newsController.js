@@ -1,7 +1,6 @@
 import NodeCache from "node-cache";
-import { newsDBPool, authDBPool, userInteractDBPool } from "../dbConfig/get-db.js";
-import { addNewsQuery, addTagQuery, countReactionsQuery, deleteNewsQuery, deleteNewsTagQuery, deleteReactionsQuery, getAllNewsQuery, getTagIdsQuery, insertReactionsQuery, setNewTagsQuery, updateReactionsQuery } from "../queries/newsQueries.js";
-
+import { newsDBPool, userInteractDBPool } from "../dbConfig/get-db.js";
+import { addNewsQuery, addTagQuery, deleteNewsQuery, deleteNewsTagQuery, getAllNewsQuery, getTagIdsQuery, setNewTagsQuery } from "../queries/newsQueries.js";
 
 const newsCache = new NodeCache({
     stdTTL: 30,
@@ -13,22 +12,31 @@ export const getAllNewsDetails = async (req, res) => {
     // const cachedNews = newsCache.get("allNews");
     try {
 
-        const exsitingNews = await newsDBPool.query(getAllNewsQuery)
+        const exsitingNews = await newsDBPool.query(`${getAllNewsQuery}`,)
         if (exsitingNews?.rows?.length === 0) {
             res.status(404).json({ msg: 'News Content Not Found' })
         } else {
             const data = exsitingNews?.rows
-            const result = await newsDBPool.query(`
+            const tagResult = await newsDBPool.query(`
                     SELECT COUNT(DISTINCT tag_id) AS total_tags FROM news_tags;
                 `);
             newsCache.set("allNews", data);
 
             const allCachedNews = newsCache.get("allNews");
+
+            const reactionResult = await newsDBPool.query(`
+                SELECT 
+                    SUM(likes) AS total_likes, 
+                    SUM(dislikes) AS total_dislikes 
+                FROM news;
+            `);
             // console.log(data?.length)
             res.status(200).json({
                 news: allCachedNews,
                 totalNews: exsitingNews?.rows?.length,
-                totalTags: result.rows[0].total_tags
+                totalTags: tagResult.rows[0].total_tags,
+                totalLikes: reactionResult.rows[0].total_likes,
+                totalDislikes: reactionResult.rows[0].total_dislikes
             })
         }
     } catch (error) {
@@ -106,101 +114,103 @@ export const deleteNews = async (req, res) => {
 }
 
 export const updateNewsLikes = async (req, res) => {
-    const { newsId, type } = req.params;
+    const { newsId, type: reaction } = req.params;
     const userId = req.userId;
-
-    const client = await userInteractDBPool.connect();
     try {
-        await client.query("BEGIN");
-
-        const userExists = await authDBPool.query("SELECT id FROM users WHERE id = $1", [userId]);
-        if (userExists.rows.length === 0) {
-            return res.status(400).json({ message: "User not found" });
+        if (!['like', 'dislike'].includes(reaction)) {
+            return res.status(400).json({ error: 'Invalid reaction' });
         }
 
-        const newsExists = await newsDBPool.query("SELECT id FROM news WHERE id = $1", [newsId]);
-        if (newsExists.rows.length === 0) {
-            return res.status(400).json({ message: "News article not found" });
+        // Check if the news item exists
+        const newsCheck = await newsDBPool.query('SELECT id FROM news WHERE id = $1', [newsId]);
+
+        if (newsCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'News item not found' });
         }
 
-        const existingReaction = await userInteractDBPool.query(
-            "SELECT action FROM user_interactions WHERE user_id = $1 AND news_id = $2",
-            [userId, newsId]
-        );
+        // Check if the user has already interacted with this news item
+        const existingInteraction = await userInteractDBPool.query(`
+            SELECT * FROM user_interactions WHERE user_id = $1 AND news_id = $2
+        `, [userId, newsId]);
 
-        let likeChange = 0;
-        let dislikeChange = 0;
+        const client = await newsDBPool.connect(); // Get a DB connection for newsDBPool
+        await client.query('BEGIN'); // Start a transaction
 
-        if (existingReaction.rows.length > 0) {
-            const currentAction = existingReaction.rows[0].action;
+        if (existingInteraction.rows.length > 0) {
+            // If the user has already interacted, check if it's the same reaction
+            const existingReaction = existingInteraction.rows[0].reaction;
 
-            if (currentAction === type) {
-                // If user presses the same button again → Remove reaction
-                await userInteractDBPool.query(
-                    "DELETE FROM user_interactions WHERE user_id = $1 AND news_id = $2",
-                    [userId, newsId]
-                );
-                if (currentAction === "like") likeChange = -1;
-                if (currentAction === "dislike") dislikeChange = -1;
+            if (existingReaction === reaction) {
+                // User is trying to react the same way, return an error
+                return res.status(400).json({ error: 'You have already reacted this way to this post' });
             } else {
-                // If user toggles between like and dislike → Update reaction
-                await userInteractDBPool.query(
-                    "UPDATE user_interactions SET action = $1 WHERE user_id = $2 AND news_id = $3",
-                    [type, userId, newsId]
-                );
+                // User is trying to change their reaction (from like to dislike or vice versa)
+                // Update the interaction with the new reaction
+                await userInteractDBPool.query(`
+                    UPDATE user_interactions
+                    SET reaction = $1
+                    WHERE user_id = $2 AND news_id = $3
+                `, [reaction, userId, newsId]);
 
-                if (type === "like") {
-                    likeChange = 1;
-                    dislikeChange = -1;
-                } else {
-                    likeChange = -1;
-                    dislikeChange = 1;
+                // Update the news table accordingly
+                if (reaction === 'like') {
+                    await newsDBPool.query(`
+                        UPDATE news
+                        SET likes = likes + 1, dislikes = GREATEST(dislikes - 1, 0) -- Prevent negative dislikes
+                        WHERE id = $1
+                    `, [newsId]);
+                } else if (reaction === 'dislike') {
+                    await newsDBPool.query(`
+                        UPDATE news
+                        SET dislikes = dislikes + 1, likes = GREATEST(likes - 1, 0) -- Prevent negative likes
+                        WHERE id = $1
+                    `, [newsId]);
                 }
             }
         } else {
-            await userInteractDBPool.query(
-                "INSERT INTO user_interactions (user_id, news_id, action) VALUES ($1, $2, $3)",
-                [userId, newsId, type]
-            );
-            if (type === "like") likeChange = 1;
-            if (type === "dislike") dislikeChange = 1;
+            // If no existing interaction, insert a new interaction
+            await userInteractDBPool.query(`
+                INSERT INTO user_interactions (user_id, news_id, reaction)
+                VALUES ($1, $2, $3)
+            `, [userId, newsId, reaction]);
+
+            // Update the news table accordingly
+            if (reaction === 'like') {
+                await newsDBPool.query(`
+                    UPDATE news
+                    SET likes = likes + 1
+                    WHERE id = $1
+                `, [newsId]);
+            } else if (reaction === 'dislike') {
+                await newsDBPool.query(`
+                    UPDATE news
+                    SET dislikes = dislikes + 1
+                    WHERE id = $1
+                `, [newsId]);
+            }
         }
 
-        await newsDBPool.query(
-            `UPDATE news 
-             SET likes = GREATEST(likes + $1, 0), 
-                 dislikes = GREATEST(dislikes + $2, 0) 
-             WHERE id = $3`,
-            [likeChange, dislikeChange, newsId]
-        );
-
-        const countResult = await newsDBPool.query(
-            "SELECT likes, dislikes FROM news WHERE id = $1",
-            [newsId]
-        );
-
-        const result = await newsDBPool.query(`
-                SELECT 
-                    SUM(likes) AS total_likes, 
-                    SUM(dislikes) AS total_dislikes 
-                FROM news;
-            `);
-
         // Commit the transaction
-        await client.query("COMMIT");
+        await client.query('COMMIT');
+
+        // Fetch the updated counts for likes and dislikes
+        const updatedNews = await newsDBPool.query(`
+            SELECT likes, dislikes FROM news WHERE id = $1
+        `, [newsId]);
+
+        const { likes, dislikes } = updatedNews.rows[0];
 
         res.status(200).json({
-            message: "Reaction updated successfully",
-            data: countResult.rows[0],
-            totalLikes: result.rows[0].total_likes,
-            totalDislikes: result.rows[0].total_dislikes,
+            message: 'Interaction recorded successfully',
+            data: {
+                likes,
+                dislikes,
+            }
         });
+
+
     } catch (error) {
-        await client.query("ROLLBACK");
-        console.error("Error updating reaction:", error);
-        res.status(500).json({ message: "Server error" });
-    } finally {
-        client.release();
+        res.status(500).json({ error: error.message });
     }
 };
 

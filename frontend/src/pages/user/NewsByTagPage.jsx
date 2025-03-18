@@ -124,7 +124,7 @@ const NewsByTag = () => {
                   </Typography>
                   {article.tags &&
                     article.tags?.length > 0 &&
-                    article.tags?.map((tag) => (
+                    article.tags?.map((tag, tag_index) => (
                       <Typography
                         variant="h3"
                         sx={{
@@ -135,6 +135,7 @@ const NewsByTag = () => {
                         }}
                         gutterBottom
                         onClick={() => setSelectedTag(`${tag}`)}
+                        key={tag_index}
                       >
                         #{tag}
                       </Typography>

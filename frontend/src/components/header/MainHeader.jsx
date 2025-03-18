@@ -44,19 +44,6 @@ const MainHeader = ({ navigate, currentUser, setHandleOpen }) => {
         >
           News
         </Button>
-        <Button
-          onClick={() => navigate("/news")}
-          sx={{
-            color: "inherit",
-            fontSize: 17,
-            textTransform: "capitalize",
-            ":hover": {
-              textDecoration: "underline",
-            },
-          }}
-        >
-          News
-        </Button>
         {!currentUser ? (
           <>
             <Button

@@ -10,7 +10,9 @@ const initialState = {
     likeId: null,
     dislikeCounts: 0,
     dislikeId: null,
-    tagParams: null
+    tagParams: null,
+    totalLikes: 0,
+    totalDisLikes: 0
 }
 
 const newsSlice = createSlice({
@@ -41,11 +43,7 @@ const newsSlice = createSlice({
             state.totalTags = action.payload
         },
         setLikeCount: (state, action) => {
-            if (action.payload) {
-                state.likeCount = action.payload
-            } else {
-                state.likeCount = 0
-            }
+            state.likeCount = state.news.reduce((acc, item) => (item.likes + action.payload || 0), 0);
         },
         setLikeId: (state, action) => {
             if (action.payload) {
@@ -65,6 +63,12 @@ const newsSlice = createSlice({
         },
         removeTagParams: (state) => {
             state.tagParams = null
+        },
+        setTotalLikes: (state, action) => {
+            state.totalLikes = action.payload
+        },
+        setTotalDisLikes: (state, action) => {
+            state.totalDisLikes = action.payload
         }
     }
 })
@@ -80,7 +84,9 @@ export const {
     setLikeId,
     setDislikeId,
     setTagParams,
-    removeTagParams
+    removeTagParams,
+    setTotalLikes,
+    setTotalDisLikes
 } = newsSlice.actions
 
 export default newsSlice.reducer
