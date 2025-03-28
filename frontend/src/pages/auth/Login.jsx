@@ -24,7 +24,7 @@ const Login = () => {
 
   const handleLogin = async (data) => {
     await handleLoginAuth(data).then(() => {
-      navigate("/news");
+      navigate("/");
       reset({});
     });
   };

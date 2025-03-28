@@ -6,11 +6,10 @@
   "type": "module",
   "scripts": {
     "get-db": "node ./src/dbConfig/get-db.js",
+    "migrate:books": "npx knex migrate:latest --knexfile ./knexfile.js --env books",
     "migrate:auth": "npx knex migrate:latest --knexfile ./knexfile.js --env auth",
-    "migrate:news": "npx knex migrate:latest --knexfile ./knexfile.js --env news",
-    "migrate:user_interactions": "npx knex migrate:latest --knexfile ./knexfile.js --env user_interactions",
+    "seed:books": "npx knex seed:run --knexfile ./knexfile.js --env books",
     "seed:auth": "npx knex seed:run --knexfile ./knexfile.js --env auth",
-    "seed:news": "npx knex seed:run --knexfile ./knexfile.js --env news",
     "start": "nodemon  src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -28,6 +27,8 @@
     "knex": "^3.1.0",
     "multer": "^1.4.5-lts.1",
     "node-cache": "^5.1.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.0",
     "nodemon": "^3.1.0",
     "pg": "^8.11.3"
   }

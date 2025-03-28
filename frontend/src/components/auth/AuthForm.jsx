@@ -13,6 +13,8 @@ const AuthForm = ({
   errors,
   control,
   password,
+  handleImageChange,
+  previewImage,
 }) => {
   return (
     <form
@@ -133,6 +135,35 @@ const AuthForm = ({
             )}
           />
         </Box>
+      )}
+      {title === "Register" && (
+        <>
+          {/* Image Upload */}
+          <Box sx={{ my: 2 }}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageChange(e)}
+              style={{ display: "none" }}
+              id="upload-image"
+            />
+            <label htmlFor="upload-image">
+              <Button variant="contained" component="span" fullWidth>
+                Upload Image
+              </Button>
+            </label>
+            {previewImage && (
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  width="200px"
+                  height="200px"
+                />
+              </Box>
+            )}
+          </Box>
+        </>
       )}
       <Box
         sx={{

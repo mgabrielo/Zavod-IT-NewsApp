@@ -1,14 +1,14 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Header from "./components/header/Header";
 import { Toaster } from "react-hot-toast";
-import HomePage from "./pages/home/HomePage";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import PrivateRoute from "./pages/PrivateRoute";
 import AuthForm from "./components/auth/AuthForm";
-import NewsByTag from "./pages/user/NewsByTagPage";
-import CreateNewsPage from "./pages/user/CreateNewsPage";
-import StatisticsPage from "./pages/user/StatisticsPage";
+import HomeLibrary from "./pages/home";
+import UploadBookPage from "./pages/user/UploadBookPage";
+import CheckOutBookPage from "./pages/user/CheckOutBookPage";
+import Search from "./pages/user/SearchPage";
 
 function App() {
   return (
@@ -20,17 +20,16 @@ function App() {
       />
       <main>
         <Routes>
-          <Route path="/news" element={<HomePage />} />
+          <Route path="/" element={<HomeLibrary />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/auth" element={<AuthForm />} />
           <Route element={<PrivateRoute />}>
-            <Route path="/news-by-tag" element={<NewsByTag />} />
-            <Route path="/create-news" element={<CreateNewsPage />} />
-            <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/check-out-books" element={<CheckOutBookPage />} />
+            <Route path="/upload-book/:bookId" element={<UploadBookPage />} />
+            <Route path="/search" element={<Search />} />
           </Route>
-          #
-          <Route path={"*"} element={<Navigate to={"/news"} />} />
+          <Route path={"*"} element={<Navigate to={"/"} />} />
         </Routes>
       </main>
     </div>

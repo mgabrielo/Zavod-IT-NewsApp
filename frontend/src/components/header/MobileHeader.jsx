@@ -64,7 +64,7 @@ const MobileHeader = ({
               onClick={toggleDrawer(!open)}
             >
               <Typography sx={{ fontWeight: "700", fontSize: 18 }}>
-                NewsApp
+                Library App
               </Typography>
               <IconButton>
                 {theme.direction === "ltr" ? (
@@ -87,7 +87,7 @@ const MobileHeader = ({
       <Box>
         <Typography
           component={Link}
-          to={"/news"}
+          to={"/"}
           variant="h6"
           noWrap
           sx={{
@@ -98,7 +98,7 @@ const MobileHeader = ({
             textDecoration: "none",
           }}
         >
-          NewsApp Mobile
+          Library App Mobile
         </Typography>
       </Box>
     </Box>

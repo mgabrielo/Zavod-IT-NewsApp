@@ -12,15 +12,11 @@ export const drawerItems = [
     link: "/register",
   },
   {
-    label: "News By Tag",
-    link: "/news-by-tag",
+    label: "Upload Book",
+    link: `/upload-book/${"new"}`,
   },
   {
-    label: "Create News",
-    link: "/create-news",
-  },
-  {
-    label: "Statistics",
-    link: "/statistics",
+    label: "Borrowed",
+    link: "/check-out-books",
   },
 ];

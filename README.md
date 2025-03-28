@@ -1,4 +1,4 @@
-# News App Project built with React Vite, Material UI, Redux ToolKit, Node js, Express js, JWT, and PostgreSQL
+# Library App Project built with React Vite, Material UI, Redux ToolKit, Node js, Knex, Express js, JWT, and PostgreSQL
 
 # 1. Back-end :
 
@@ -14,13 +14,11 @@ This procedeure should start up the backend application:
 
 - Next run this command in your backend terminal: " npm run migrate:auth " to start auth database migration
 
-- Next run this command in your backend terminal: " npm run migrate:news " to start news database migration
+- Next run this command in your backend terminal: " npm run migrate:books " to start books database migration
 
-- Next run this command in your backend terminal: " npm run migrate:user_interactions " to start user interactions database migration
+- Next run this command in your backend terminal: " npm run seed:auth" to populate user table
 
-- Next run this command in your backend terminal: " npm run seed:auth" to populate auth database
-
-- Next run this command in your backend terminal: " npm run seed:news" to populate news database
+- Next run this command in your backend terminal: " npm run seed:books" to populate books table
 
 - Finally, Run the command: " npm run start " to start the backend node server on http://localhost:3000
 
@@ -40,4 +38,4 @@ This procedeure should start up the frontend application:
 
 - Go to env example file in backend folder
 
-- Use values of ADMIN_EMAIL and ADMIN_PASSWORD to sign in to the react front end after seeding of auth data is complete in backend via npm run seed:news
+- Use values of ADMIN_EMAIL and ADMIN_PASSWORD to sign in to the react front end after seeding of user data is complete in backend via npm run seed:auth

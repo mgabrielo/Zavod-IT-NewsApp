@@ -1,15 +1,15 @@
-import fs from 'fs';
-import path from 'path'
+import fs from "fs";
+import path from "path";
 import { fileURLToPath } from "url";
-import bcrypt from 'bcrypt';
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const imageDirectory = path.join(__dirname, "/images");
 const getImages = () => {
-  return fs.readdirSync(imageDirectory).filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file)); // Only include images
+  return fs
+    .readdirSync(imageDirectory)
+    .filter((file) => /\.(jpg|jpeg|png|gif)$/i.test(file)); // Only include images
 };
 
 export const seed = async function (knex) {
@@ -20,37 +20,37 @@ export const seed = async function (knex) {
     await knex("news").del();
 
     // Sample news data
-    let newsData = []
+    let newsData = [];
     const images = getImages();
 
     for (let i = 0; i <= 11; i++) {
-      const imageIndex = i % images.length
+      const imageIndex = i % images.length;
       const newTechData = {
         title: `Tech House ${i + 1}`,
         text: `Tech Text ${i + 1}`,
         picture: images[imageIndex],
         tags: ["Tech"],
         likes: 0,
-        dislikes: 0
-      }
+        dislikes: 0,
+      };
       const newPoliticsData = {
         title: `Politics House ${i + 1}`,
         text: `Politics Text ${i + 1}`,
         picture: images[imageIndex],
         tags: ["Politics"],
         likes: 0,
-        dislikes: 0
-      }
+        dislikes: 0,
+      };
       const newFinanceData = {
         title: `Finance House ${i + 1}`,
         text: `Finance Text ${i + 1}`,
         picture: images[imageIndex],
         tags: ["Finance"],
         likes: 0,
-        dislikes: 0
-      }
+        dislikes: 0,
+      };
 
-      newsData.push(newTechData, newPoliticsData, newFinanceData)
+      newsData.push(newTechData, newPoliticsData, newFinanceData);
     }
 
     for (const news of newsData) {
@@ -60,7 +60,7 @@ export const seed = async function (knex) {
           text: news.text,
           picture: news.picture,
           likes: 0,
-          dislikes: 0
+          dislikes: 0,
         })
         .returning("id");
 
@@ -81,7 +81,9 @@ export const seed = async function (knex) {
         if (existingTag) {
           tagId = existingTag.id;
         } else {
-          const [newTagId] = await knex("tags").insert({ name: tag }).returning("id");
+          const [newTagId] = await knex("tags")
+            .insert({ name: tag })
+            .returning("id");
           tagId = newTagId.id;
         }
 
@@ -98,11 +100,9 @@ export const seed = async function (knex) {
           .onConflict(["news_id", "tag_id"])
           .ignore();
       }
-
     }
     console.log("✅ Database seeding complete!");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
   }
 };
-

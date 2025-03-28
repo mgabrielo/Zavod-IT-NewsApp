@@ -27,12 +27,12 @@ const MainHeader = ({ navigate, currentUser, setHandleOpen }) => {
             textDecoration: "none",
           }}
         >
-          News App
+          Library App
         </Typography>
       </Box>
       <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
         <Button
-          onClick={() => navigate("/news")}
+          onClick={() => navigate("/")}
           sx={{
             color: "inherit",
             fontSize: 17,
@@ -42,7 +42,7 @@ const MainHeader = ({ navigate, currentUser, setHandleOpen }) => {
             },
           }}
         >
-          News
+          Library
         </Button>
         {!currentUser ? (
           <>
@@ -85,9 +85,9 @@ const MainHeader = ({ navigate, currentUser, setHandleOpen }) => {
                 },
                 width: 150,
               }}
-              onClick={() => navigate("/news-by-tag")}
+              onClick={() => navigate("/search")}
             >
-              News By Tag
+              Search
             </Button>
             <Button
               color="inherit"
@@ -99,9 +99,9 @@ const MainHeader = ({ navigate, currentUser, setHandleOpen }) => {
                 },
                 width: 150,
               }}
-              onClick={() => navigate("/create-news")}
+              onClick={() => navigate(`/upload-book/${"new"}`)}
             >
-              Create News
+              Upload Book
             </Button>
             <Button
               color="inherit"
@@ -113,9 +113,9 @@ const MainHeader = ({ navigate, currentUser, setHandleOpen }) => {
                 },
                 width: 150,
               }}
-              onClick={() => navigate("/statistics")}
+              onClick={() => navigate("/check-out-books")}
             >
-              Statistics
+              CheckOut
             </Button>
             <Button
               color="inherit"
